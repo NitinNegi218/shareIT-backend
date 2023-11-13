@@ -14,10 +14,7 @@ let storage = multer.diskStorage({
 
 let upload = multer({ storage, limits:{ fileSize: 1000000 * 100 }, }).single('myfile'); //100mb
 
-
-
 router.post('/', (req, res) => {
-    console.log("dsnkdnasd");
     upload(req, res, async (err) => {
       if (err) {
         return res.status(500).send({ error: err.message });
@@ -29,22 +26,19 @@ router.post('/', (req, res) => {
             size: req.file.size
         });
         const response = await file.save();
-           console.log("nitin",response);
         res.json({ file: `${process.env.APP_BASE_URL}/files/${response.uuid}` });
       });
 });
 
 router.post('/send', async (req, res) => {
-  const { uuid, emailTo, emailFrom} = req.body;
+  const { uuid, emailTo, emailFrom, expiresIn } = req.body;
   if(!uuid || !emailTo || !emailFrom) {
       return res.status(422).send({ error: 'All fields are required except expiry.'});
   }
   // Get data from db 
   try {
-    console.log('uuid:', uuid);
     const file = await File.findOne({ uuid: uuid });
-    console.log('file:', file);
-    if(file && file.sender) {
+    if(file.sender) {
       return res.status(422).send({ error: 'Email already sent once.'});
     }
     file.sender = emailFrom;
@@ -69,7 +63,7 @@ router.post('/send', async (req, res) => {
       return res.status(500).json({error: 'Error in email sending.'});
     });
 } catch(err) {
-  console.log('Error sending email:', err);
+  console.error('Error sending email:', err); 
   return res.status(500).send({ error: 'Something went wrong.'});
 }
 
